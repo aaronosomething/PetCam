@@ -15,12 +15,13 @@ class Image(db.Model):
     note = db.Column(db.String(256), nullable=True)
 
     def to_dict(self, base_url=""):
+        base = (base_url or "/api").rstrip("/")
         return {
             "id": self.id,
             "filename": self.filename,
             "timestamp": self.timestamp.isoformat(),
-            "image_url": f"{base_url}/images/{self.filename}",
-            "thumbnail_url": f"{base_url}/thumbnails/{self.filename}",
+            "image_url": f"{base}/images/{self.filename}",
+            "thumbnail_url": f"{base}/thumbnails/{self.filename}",
             "filesize": self.filesize,
             "width": self.width,
             "height": self.height,

@@ -44,14 +44,19 @@ function Latest({ latest }) {
   );
 }
 
-function List({ items }) {
+function List({ items, onSelect }) {
   if (!items?.length) {
     return <div className="card">No images to show.</div>;
   }
   return (
     <div className="grid">
       {items.map((img) => (
-        <div key={img.id} className="card">
+        <button
+          key={img.id}
+          className="card card-clickable"
+          onClick={() => onSelect(img)}
+          title="View full image"
+        >
           <div className="card-header">{fmtDate(img.timestamp)}</div>
           <img
             className="thumb"
@@ -63,8 +68,26 @@ function List({ items }) {
             <div>{img.filename}</div>
             <div>{(img.filesize / 1024).toFixed(1)} KB</div>
           </div>
-        </div>
+        </button>
       ))}
+    </div>
+  );
+}
+
+function DetailView({ image, onBack }) {
+  if (!image) return null;
+  return (
+    <div className="card detail-card">
+      <div className="detail-header">
+        <div>
+          <div className="card-header">{fmtDate(image.timestamp)}</div>
+          <div className="meta">{image.filename}</div>
+        </div>
+        <button className="btn btn-ghost" onClick={onBack}>
+          Back to grid
+        </button>
+      </div>
+      <img className="detail-img" src={image.image_url} alt={image.filename} />
     </div>
   );
 }
@@ -78,10 +101,12 @@ export default function App() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [selected, setSelected] = useState(null);
 
   const load = async () => {
     setLoading(true);
     setError("");
+    setSelected(null);
     try {
       const [latestResp, listResp] = await Promise.allSettled([
         fetchJson(`${apiBase}/latest`),
@@ -120,7 +145,11 @@ export default function App() {
       {!loading && (
         <>
           <Latest latest={latest} />
-          <List items={list} />
+          {selected ? (
+            <DetailView image={selected} onBack={() => setSelected(null)} />
+          ) : (
+            <List items={list} onSelect={setSelected} />
+          )}
         </>
       )}
     </div>
