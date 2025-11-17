@@ -5,7 +5,7 @@ import subprocess
 import signal
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from . import db
@@ -48,7 +48,7 @@ def _insert_db_record(session, rel_path: str, full_path: Path, thumb_rel: str, t
 
     img = ImageModel(
         filename=rel_path,
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(timezone.utc),
         filepath=str(full_path),
         thumbnail_path=str(thumb_full),
         filesize=filesize,
@@ -74,7 +74,7 @@ def capture_loop(interval_seconds: int = None):
 
     # Run until stopped
     while _RUNNING:
-        ts = datetime.utcnow()
+        ts = datetime.now(timezone.utc)
         rel, full_path = make_timestamped_path(images_dir, ts)
         thumb_rel, thumb_full = make_timestamped_path(thumbs_dir, ts)
 
