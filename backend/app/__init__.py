@@ -10,6 +10,14 @@ def create_app(config_object=None):
 
     db.init_app(app)
 
+    @app.after_request
+    def add_cors_headers(response):
+        # Allow frontend dev server (different origin) to access the API.
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+        return response
+
     # register API blueprint
     from .api import api_bp
     app.register_blueprint(api_bp, url_prefix='/api')
