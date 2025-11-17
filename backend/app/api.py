@@ -9,8 +9,8 @@ from datetime import datetime
 api_bp = Blueprint("api", __name__)
 
 def _base_url():
-    # use empty base (same origin); frontend can prepend origin if needed
-    return ""
+    # Build absolute base (scheme + host) so image URLs work when frontend is on another origin.
+    return request.host_url.rstrip("/") + "/api"
 
 @api_bp.route("/latest", methods=["GET"])
 def get_latest():
