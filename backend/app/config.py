@@ -17,7 +17,7 @@ class Config:
     THUMBS_DIR = Path(os.environ.get("PETCAM_THUMBS_DIR", str(basedir / "data" / "thumbnails")))
 
     # Capture settings
-    CAPTURE_INTERVAL_SECONDS = int(os.environ.get("PETCAM_INTERVAL", "60"))
+    CAPTURE_INTERVAL_SECONDS = int(os.environ.get("PETCAM_INTERVAL", "300"))
     IMAGE_RESOLUTION = os.environ.get("PETCAM_RESOLUTION", "1280x720")
     JPEG_QUALITY = int(os.environ.get("PETCAM_JPEG_QUALITY", "85"))
 

@@ -3,8 +3,10 @@ from sqlalchemy import desc
 from . import db
 from .models import Image
 from .config import Config
+from .capture import capture_single
 from pathlib import Path
 from datetime import datetime
+import subprocess
 
 api_bp = Blueprint("api", __name__)
 
@@ -43,6 +45,18 @@ def list_images():
         "total": pagination.total,
         "items": items,
     })
+
+@api_bp.route("/capture", methods=["POST"])
+def capture_now():
+    try:
+        img = capture_single()
+    except subprocess.CalledProcessError as exc:
+        current_app.logger.exception("fswebcam failed during manual capture")
+        return jsonify({"error": "capture_failed", "detail": str(exc)}), 500
+    except Exception as exc:
+        current_app.logger.exception("Unexpected capture failure")
+        return jsonify({"error": "capture_failed", "detail": str(exc)}), 500
+    return jsonify(img.to_dict(base_url=_base_url()))
 
 @api_bp.route("/image/<int:image_id>", methods=["GET"])
 def get_image_meta(image_id):

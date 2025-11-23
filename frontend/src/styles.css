@@ -22,6 +22,11 @@ body {
   gap: 16px;
 }
 
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
 .title {
   margin: 0;
   font-size: 28px;
@@ -44,6 +49,11 @@ body {
 
 .btn:hover {
   background: #0284c7;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .banner {

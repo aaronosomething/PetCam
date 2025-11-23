@@ -3,16 +3,21 @@ import { fetchJson } from "./api.js";
 
 const fmtDate = (iso) => new Date(iso).toLocaleString();
 
-function Header({ onRefresh }) {
+function Header({ onRefresh, onCapture, isCapturing }) {
   return (
     <header className="header">
       <div>
         <h1 className="title">PetCam</h1>
         <p className="subtitle">Latest snapshot and browse history</p>
       </div>
-      <button className="btn" onClick={onRefresh}>
-        Refresh
-      </button>
+      <div className="header-actions">
+        <button className="btn" onClick={onCapture} disabled={isCapturing}>
+          {isCapturing ? "Capturing…" : "Capture"}
+        </button>
+        <button className="btn" onClick={onRefresh} disabled={isCapturing}>
+          Refresh
+        </button>
+      </div>
     </header>
   );
 }
@@ -102,6 +107,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState(null);
+  const [capturing, setCapturing] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -136,9 +142,23 @@ export default function App() {
     load();
   }, []);
 
+  const triggerCapture = async () => {
+    if (capturing) return;
+    setCapturing(true);
+    setError("");
+    try {
+      await fetchJson(`${apiBase}/capture`, { method: "POST" });
+      await load();
+    } catch (err) {
+      setError(err?.message || "Failed to capture image");
+    } finally {
+      setCapturing(false);
+    }
+  };
+
   return (
     <div className="page">
-      <Header onRefresh={load} />
+      <Header onRefresh={load} onCapture={triggerCapture} isCapturing={capturing} />
       <InfoBanner baseUrl={apiBase} />
       {error && <div className="error">{error}</div>}
       {loading && <div className="loading">Loading…</div>}

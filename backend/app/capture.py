@@ -60,13 +60,26 @@ def _insert_db_record(session, rel_path: str, full_path: Path, thumb_rel: str, t
     session.commit()
     return img
 
+def capture_single(session=None):
+    """Capture a single image and persist metadata."""
+    ensure_dirs()
+    ts = datetime.now(timezone.utc)
+    rel, full_path = make_timestamped_path(Config.IMAGES_DIR, ts)
+    thumb_rel, thumb_full = make_timestamped_path(Config.THUMBS_DIR, ts)
+    resolution = Config.IMAGE_RESOLUTION
+    jpeg_quality = Config.JPEG_QUALITY
+
+    _run_fswebcam(full_path, resolution)
+    generate_thumbnail(full_path, thumb_full, size=(320, 180), quality=int(int(jpeg_quality) * 0.9))
+
+    session = session or db.session
+    return _insert_db_record(session, rel, full_path, thumb_rel, thumb_full)
+
 def capture_loop(interval_seconds: int = None):
     ensure_dirs()
     interval = interval_seconds or Config.CAPTURE_INTERVAL_SECONDS
     images_dir = Config.IMAGES_DIR
     thumbs_dir = Config.THUMBS_DIR
-    resolution = Config.IMAGE_RESOLUTION
-    jpeg_quality = Config.JPEG_QUALITY
 
     # Bind to app context for DB access
     from flask import current_app
@@ -74,20 +87,9 @@ def capture_loop(interval_seconds: int = None):
 
     # Run until stopped
     while _RUNNING:
-        ts = datetime.now(timezone.utc)
-        rel, full_path = make_timestamped_path(images_dir, ts)
-        thumb_rel, thumb_full = make_timestamped_path(thumbs_dir, ts)
-
         try:
-            # Run fswebcam to save image
-            _run_fswebcam(full_path, resolution)
-
-            # generate thumbnail
-            generate_thumbnail(full_path, thumb_full, size=(320, 180), quality=int(jpeg_quality * 0.9))
-
-            # insert into DB
             with app.app_context():
-                _insert_db_record(db.session, rel, full_path, thumb_rel, thumb_full)
+                capture_single()
 
             # Prune if needed (run pruning occasionally, e.g., every 10 captures)
             capture_loop._counter = getattr(capture_loop, "_counter", 0) + 1
