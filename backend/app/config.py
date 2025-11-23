@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 basedir = Path(__file__).resolve().parent.parent
 
@@ -15,6 +16,8 @@ class Config:
     # Storage paths
     IMAGES_DIR = Path(os.environ.get("PETCAM_IMAGES_DIR", str(basedir / "data" / "images")))
     THUMBS_DIR = Path(os.environ.get("PETCAM_THUMBS_DIR", str(basedir / "data" / "thumbnails")))
+    LOCAL_TIMEZONE_NAME = os.environ.get("PETCAM_TIMEZONE", "America/New_York")
+    LOCAL_TIMEZONE = ZoneInfo(LOCAL_TIMEZONE_NAME)
 
     # Capture settings
     CAPTURE_INTERVAL_SECONDS = int(os.environ.get("PETCAM_INTERVAL", "300"))

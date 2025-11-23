@@ -3,6 +3,19 @@ import { fetchJson } from "./api.js";
 
 const fmtDate = (iso) => new Date(iso).toLocaleString();
 
+const formatHourLabel = (iso) => {
+  const base = new Date(iso);
+  const start = new Date(base);
+  start.setMinutes(0, 0, 0);
+  const end = new Date(start);
+  end.setMinutes(59, 59, 999);
+  const compress = (date) =>
+    date
+      .toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+      .replace(/\s+/g, "");
+  return `${start.toLocaleDateString()} • ${compress(start)}-${compress(end)}`;
+};
+
 function Header({ onRefresh, onCapture, isCapturing }) {
   return (
     <header className="header">
@@ -49,32 +62,44 @@ function Latest({ latest }) {
   );
 }
 
-function List({ items, onSelect }) {
-  if (!items?.length) {
+function List({ bucket, onSelect, onPrev, onNext, hasPrev, hasNext }) {
+  if (!bucket || !bucket.items?.length) {
     return <div className="card">No images to show.</div>;
   }
+  const items = bucket.items;
   return (
-    <div className="grid">
-      {items.map((img) => (
-        <button
-          key={img.id}
-          className="card card-clickable"
-          onClick={() => onSelect(img)}
-          title="View full image"
-        >
-          <div className="card-header">{fmtDate(img.timestamp)}</div>
-          <img
-            className="thumb"
-            src={img.thumbnail_url}
-            alt={img.filename}
-            loading="lazy"
-          />
-          <div className="meta">
-            <div>{img.filename}</div>
-            <div>{(img.filesize / 1024).toFixed(1)} KB</div>
-          </div>
+    <div className="card">
+      <div className="grid-controls">
+        <button className="btn btn-ghost" onClick={onPrev} disabled={!hasPrev}>
+          ← Previous
         </button>
-      ))}
+        <div className="grid-title">{bucket.label}</div>
+        <button className="btn btn-ghost" onClick={onNext} disabled={!hasNext}>
+          Next →
+        </button>
+      </div>
+      <div className="grid">
+        {items.map((img) => (
+          <button
+            key={img.id}
+            className="card card-clickable"
+            onClick={() => onSelect(img)}
+            title="View full image"
+          >
+            <div className="card-header">{fmtDate(img.timestamp)}</div>
+            <img
+              className="thumb"
+              src={img.thumbnail_url}
+              alt={img.filename}
+              loading="lazy"
+            />
+            <div className="meta">
+              <div>{img.filename}</div>
+              <div>{(img.filesize / 1024).toFixed(1)} KB</div>
+            </div>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -108,6 +133,33 @@ export default function App() {
   const [error, setError] = useState("");
   const [selected, setSelected] = useState(null);
   const [capturing, setCapturing] = useState(false);
+  const [hourIndex, setHourIndex] = useState(0);
+
+  const hourBuckets = useMemo(() => {
+    if (!list.length) return [];
+    const buckets = [];
+    list.forEach((img) => {
+      const ts = new Date(img.timestamp);
+      const key = `${ts.getFullYear()}-${ts.getMonth()}-${ts.getDate()}-${ts.getHours()}`;
+      const last = buckets[buckets.length - 1];
+      if (!last || last.key !== key) {
+        buckets.push({
+          key,
+          label: formatHourLabel(img.timestamp),
+          items: [img],
+        });
+      } else {
+        last.items.push(img);
+      }
+    });
+    return buckets;
+  }, [list]);
+
+  useEffect(() => {
+    setHourIndex(0);
+  }, [list]);
+
+  const currentBucket = hourBuckets[hourIndex] || null;
 
   const load = async () => {
     setLoading(true);
@@ -156,6 +208,16 @@ export default function App() {
     }
   };
 
+  const goPrevHour = () => {
+    setHourIndex((idx) => Math.max(0, idx - 1));
+    setSelected(null);
+  };
+
+  const goNextHour = () => {
+    setHourIndex((idx) => Math.min(hourBuckets.length - 1, idx + 1));
+    setSelected(null);
+  };
+
   return (
     <div className="page">
       <Header onRefresh={load} onCapture={triggerCapture} isCapturing={capturing} />
@@ -168,7 +230,14 @@ export default function App() {
           {selected ? (
             <DetailView image={selected} onBack={() => setSelected(null)} />
           ) : (
-            <List items={list} onSelect={setSelected} />
+            <List
+              bucket={currentBucket}
+              onSelect={setSelected}
+              onPrev={goPrevHour}
+              onNext={goNextHour}
+              hasPrev={hourIndex > 0}
+              hasNext={hourIndex < hourBuckets.length - 1}
+            />
           )}
         </>
       )}

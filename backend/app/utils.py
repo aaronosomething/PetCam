@@ -3,7 +3,7 @@ import shutil
 import hashlib
 from pathlib import Path
 from PIL import Image as PILImage
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 from .config import Config
 
 def ensure_dirs():
@@ -30,7 +30,7 @@ def file_checksum(path: Path, algo="sha256", chunk_size=8192):
     return h.hexdigest()
 
 def prune_old_images(images_dir: Path, thumbs_dir: Path, keep_days: int = 7, max_bytes: int = None):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(Config.LOCAL_TIMEZONE)
     cutoff = now - timedelta(days=keep_days)
     # Delete by timestamp (from filesystem mtime) first
     total_deleted = 0
@@ -38,7 +38,7 @@ def prune_old_images(images_dir: Path, thumbs_dir: Path, keep_days: int = 7, max
         for fname in files:
             fpath = Path(root) / fname
             try:
-                mtime = datetime.fromtimestamp(fpath.stat().st_mtime, tz=timezone.utc)
+                mtime = datetime.fromtimestamp(fpath.stat().st_mtime, tz=Config.LOCAL_TIMEZONE)
                 if mtime < cutoff:
                     rel = fpath.relative_to(images_dir)
                     thumb = thumbs_dir.joinpath(rel)

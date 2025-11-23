@@ -5,7 +5,7 @@ import subprocess
 import signal
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
 from . import db
@@ -48,7 +48,7 @@ def _insert_db_record(session, rel_path: str, full_path: Path, thumb_rel: str, t
 
     img = ImageModel(
         filename=rel_path,
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(Config.LOCAL_TIMEZONE),
         filepath=str(full_path),
         thumbnail_path=str(thumb_full),
         filesize=filesize,
@@ -63,7 +63,7 @@ def _insert_db_record(session, rel_path: str, full_path: Path, thumb_rel: str, t
 def capture_single(session=None):
     """Capture a single image and persist metadata."""
     ensure_dirs()
-    ts = datetime.now(timezone.utc)
+    ts = datetime.now(Config.LOCAL_TIMEZONE)
     rel, full_path = make_timestamped_path(Config.IMAGES_DIR, ts)
     thumb_rel, thumb_full = make_timestamped_path(Config.THUMBS_DIR, ts)
     resolution = Config.IMAGE_RESOLUTION
