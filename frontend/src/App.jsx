@@ -168,7 +168,7 @@ export default function App() {
     try {
       const [latestResp, listResp] = await Promise.allSettled([
         fetchJson(`${apiBase}/latest`),
-        fetchJson(`${apiBase}/list?per_page=30`)
+        fetchJson(`${apiBase}/list?per_page=50`)
       ]);
 
       if (latestResp.status === "fulfilled") {
